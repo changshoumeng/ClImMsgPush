@@ -5,8 +5,11 @@ import multiprocessing as mp
 import Queue
 import time
 
-def GetNowTime():
+def GetYearMonthDay():
     return time.strftime("%Y%m%d",time.localtime(time.time()))
+
+def GetNowTime():
+    return time.strftime("[%Y-%m-%d %H:%M:%S]",time.localtime(time.time()))
 
 
 class Singleton(object):  
@@ -23,9 +26,9 @@ class GlobalQueue(Singleton):
     logQueue=mp.JoinableQueue()
     logDir="/data/imlog/msgpush"    
     logFlag="msgpush"
-    logDate=GetNowTime()
+    logDate=GetYearMonthDay()
     logFile="{0}/{1}_{2}.log".format( logDir,logFlag,logDate )
-    f=open(logFile,"a")        
+    f=open(logFile,"a")
     
     @staticmethod
     def dumpLog(info): 
@@ -37,17 +40,23 @@ class GlobalQueue(Singleton):
             return
         try:
             t = GlobalQueue.logQueue.get()
-            print "log>>:",t
+           # print "log>>:",t
+            GlobalQueue.f.write( GetNowTime() )
             GlobalQueue.f.write(t)
             GlobalQueue.f.write("\n")
             GlobalQueue.f.flush()
-            if GlobalQueue.logDate !=  GetNowTime() :
+            if GlobalQueue.logDate !=  GetYearMonthDay() :
+                    GlobalQueue.logDate = GetYearMonthDay()
+                    GlobalQueue.logFile="{0}/{1}_{2}.log".format( GlobalQueue.logDir,GlobalQueue.logFlag,GlobalQueue.logDate )
+                    GlobalQueue.f.write(  GlobalQueue.logFile )
                     GlobalQueue.f.close()
-                    logFile="{0}/{1}_{2}.log".format( GlobalQueue.logDir,GlobalQueue.logFlag,GlobalQueue.logDate )
-                    GlobalQueue.f = open( logFile,"a")
-                    GlobalQueue.logDate=GetNowTime()
+                    GlobalQueue.f = open(  GlobalQueue.logFile,"a")
         except Queue.Empty:
             print "queue is empty"
+
+    @staticmethod
+    def test():
+        GlobalQueue.logDate="123"
 
 def dump_log(info):
     GlobalQueue.dumpLog(info)
@@ -56,4 +65,9 @@ def output_log():
     GlobalQueue.outputLog()
 
             
+if __name__ == "__main__":
+    print __file__
+    print GlobalQueue.logDate
+    GlobalQueue.test()
+    print GlobalQueue.logDate
 
